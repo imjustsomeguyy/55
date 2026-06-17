@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-head">
+  <div class="head-inner">
+    <div class="brand">hub<span class="mark">·</span></div>
+    <nav class="site-nav">
+      <a href="index.html" class="active">Home</a>
+      <button id="guidesBtn" type="button">Guides</button>
+      <a href="apps.html">Apps</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <p class="eyebrow">Reference</p>
+    <h1 class="page-title">Start here.</h1>
+    <p class="lede">A simple home for guides and tools — pick a section below.</p>
+
+    <div class="hero-grid">
+      <button class="hero-card" id="guidesCard" type="button">
+        <span class="glyph">Methods</span>
+        <h3>Guides</h3>
+        <p>Step-by-step walkthroughs, organized as individual methods.</p>
+      </button>
+      <a class="hero-card" href="apps.html">
+        <span class="glyph">Links</span>
+        <h3>Apps &amp; Tools</h3>
+        <p>The tools and links worth keeping handy.</p>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">simple, sleek, just html</footer>
+
+<!-- Guides popup -->
+<div class="modal-overlay" id="guidesModal">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Guides">
+    <div class="modal-header">
+      <span>Guides</span>
+      <button class="modal-close" id="guidesClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-list">
+      <a href="method-1.html"><span class="num">1</span> Method 1</a>
+      <a href="method-2.html"><span class="num">2</span> Method 2</a>
+      <a href="method-3.html"><span class="num">3</span> Method 3</a>
+    </div>
+  </div>
+</div>
+
+<script src="guides-modal.js"></script>
+<script>
+  // Hero card also opens the modal
+  document.getElementById('guidesCard').addEventListener('click', () => {
+    document.getElementById('guidesBtn').click();
+  });
+</script>
+
+</body>
+</html>
