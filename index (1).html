@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Sainsbury's Barcode Generator🤫</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    /* ══════════════════════════════════════════
+       CYBER LOADING SCREEN
+    ══════════════════════════════════════════ */
+    #loadingScreen {
+      position: fixed;
+      inset: 0;
+      background: #050e07;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      overflow: hidden;
+      transition: opacity 0.9s ease;
+    }
+    #loadingScreen.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Subtle scanline overlay */
+    #loadingScreen::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,255,80,0.015) 2px,
+        rgba(0,255,80,0.015) 4px
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .cyber-stage {
+      position: relative;
+      z-index: 2;
+      width: min(400px, 90vw);
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    /* Header above card */
+    .cyber-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      padding: 0 2px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.58rem;
+      color: #3a8a50;
+      letter-spacing: 0.12em;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .cyber-header.vis { opacity: 1; }
+    .cyber-header-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #68b06a;
+      box-shadow: 0 0 6px #68b06a;
+      display: inline-block;
+      animation: hdrBlink 1.2s ease-in-out infinite;
+    }
+    @keyframes hdrBlink { 0%,100%{opacity:0.3} 50%{opacity:1} }
+
+    /* The card outline */
+    .cyber-card {
+      border: 1px solid #1a4a28;
+      border-radius: 0.9rem;
+      padding: 1.4rem 1.3rem;
+      background: rgba(10, 22, 14, 0.92);
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.4s ease, transform 0.4s ease, border-color 0.5s ease;
+    }
+    .cyber-card.vis {
+      opacity: 1;
+      transform: translateY(0);
+      border-color: #2d7a45;
+      box-shadow: 0 0 0 1px #2d7a4530,
+                  0 0 30px rgba(45,122,69,0.15),
+                  inset 0 0 50px rgba(45,122,69,0.04);
+    }
+
+    /* Corner accents drawn onto card */
+    .cyber-corner {
+      position: absolute;
+      width: 14px; height: 14px;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .cyber-corner.tl { top: 8px;  left: 8px;  border-top: 2px solid #68b06a; border-left:  2px solid #68b06a; }
+    .cyber-corner.tr { top: 8px;  right: 8px; border-top: 2px solid #68b06a; border-right: 2px solid #68b06a; }
+    .cyber-corner.bl { bottom: 8px; left: 8px;  border-bottom: 2px solid #68b06a; border-left:  2px solid #68b06a; }
+    .cyber-corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid #68b06a; border-right: 2px solid #68b06a; }
+    .cyber-corner.vis { opacity: 1; }
+
+    /* Generic element row inside card */
+    .cyber-el {
+      opacity: 0;
+      transform: translateY(5px);
+      transition: opacity 0.28s ease, transform 0.28s ease;
+      margin-bottom: 0.55rem;
+    }
+    .cyber-el.vis {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Logo placeholder */
+    .cyber-logo-row {
+      height: 26px;
+      background: rgba(104,176,106,0.07);
+      border: 1px solid #2a6038;
+      border-radius: 0.35rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.3em;
+      color: #4aaa6a;
+    }
+
+    /* Input placeholder */
+    .cyber-input-row {
+      height: 34px;
+      border: 1px solid #1e5a30;
+      border-radius: 0.45rem;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      gap: 8px;
+      background: rgba(104,176,106,0.03);
+    }
+    .cyber-input-cursor {
+      width: 6px; height: 14px;
+      background: #68b06a;
+      border-radius: 1px;
+      box-shadow: 0 0 6px #68b06a;
+      animation: cursorBlink 0.8s step-end infinite;
+    }
+    @keyframes cursorBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cyber-input-fill {
+      height: 1px;
+      background: #2a6a40;
+      border-radius: 1px;
+      flex: 1;
+    }
+    .cyber-input-icon {
+      width: 20px; height: 20px;
+      border: 1px solid #2a6a40;
+      border-radius: 0.3rem;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cyber-input-icon::after {
+      content: '';
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      border: 1px solid #4a9a60;
+    }
+
+    /* Button row */
+    .cyber-btn-row {
+      display: flex;
+      gap: 0.4rem;
+    }
+    .cyber-btn {
+      flex: 1;
+      height: 28px;
+      border: 1px solid #1e5a30;
+      border-radius: 0.4rem;
+      background: rgba(104,176,106,0.05);
+      opacity: 0;
+      transform: scaleX(0.6);
+      transition: opacity 0.2s ease, transform 0.2s ease, border-color 0.2s;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .cyber-btn::after {
+      content: '';
+      width: 22px; height: 1px;
+      background: #3a8050;
+      border-radius: 1px;
+    }
+    .cyber-btn.vis {
+      opacity: 1;
+      transform: scaleX(1);
+      border-color: #2a6a40;
+    }
+    .cyber-btn.accent {
+      border-color: #68b06a;
+      background: rgba(104,176,106,0.12);
+      box-shadow: 0 0 8px rgba(104,176,106,0.15);
+    }
+    .cyber-btn.accent::after { background: #68b06a; }
+
+    /* Barcode frame */
+    .cyber-barcode-frame {
+      border: 1px solid #1e5a30;
+      border-radius: 0.6rem;
+      padding: 0.7rem 0.8rem;
+      background: rgba(255,255,255,0.02);
+    }
+    .cyber-barcode-label-line {
+      height: 8px;
+      background: #1e4a28;
+      border-radius: 2px;
+      margin-bottom: 8px;
+      width: 0%;
+      transition: width 0.5s ease;
+    }
+    .cyber-barcode-label-line.vis { width: 55%; }
+
+    .cyber-barcode-bars {
+      display: flex;
+      align-items: flex-end;
+      gap: 2px;
+      height: 50px;
+      justify-content: center;
+      margin-bottom: 6px;
+    }
+    .cyber-bar {
+      border-radius: 1px 1px 0 0;
+      background: #68b06a;
+      box-shadow: 0 0 3px rgba(104,176,106,0.4);
+      opacity: 0;
+      transform: scaleY(0);
+      transform-origin: bottom;
+      transition: opacity 0.12s ease, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .cyber-bar.vis { opacity: 0.9; transform: scaleY(1); }
+    .cyber-price-line {
+      height: 7px;
+      background: #1e4a28;
+      border-radius: 2px;
+      width: 0%;
+      transition: width 0.4s ease;
+      margin: 0 auto;
+    }
+    .cyber-price-line.vis { width: 35%; }
+
+    /* Bottom row */
+    .cyber-bottom-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+    }
+    .cyber-social {
+      flex: 1;
+      height: 32px;
+      border: 1px solid #1e5a30;
+      border-radius: 0.5rem;
+      background: rgba(104,176,106,0.04);
+      display: flex; align-items: center; padding: 0 8px; gap: 6px;
+    }
+    .cyber-social-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      border: 1px solid #4a8a60;
+      flex-shrink: 0;
+    }
+    .cyber-social-line {
+      flex: 1; height: 1px; background: #1e5a30; border-radius: 1px;
+    }
+    .cyber-themes-btn {
+      height: 32px;
+      border: 1px solid #1e5a30;
+      border-radius: 0.5rem;
+      background: rgba(104,176,106,0.04);
+      padding: 0 10px;
+      display: flex; align-items: center; gap: 5px;
+      white-space: nowrap;
+    }
+    .cyber-themes-icon {
+      width: 10px; height: 10px;
+      border-left: 1px solid #68b06a;
+      border-bottom: 1px solid #68b06a;
+      transform: rotate(-45deg);
+    }
+    .cyber-themes-line { width: 20px; height: 1px; background: #2a6040; }
+
+    /* Footer below card */
+    .cyber-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      padding: 0 2px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .cyber-footer.vis { opacity: 1; }
+
+    .cyber-title {
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.18em;
+      text-shadow: 0 0 16px rgba(104,176,106,0.5);
+    }
+    .cyber-sub {
+      font-family: 'Courier New', monospace;
+      font-size: 0.55rem;
+      color: #3a7a50;
+      letter-spacing: 0.2em;
+    }
+
+    /* Progress */
+    .cyber-progress-wrap {
+      margin-top: 14px;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    .cyber-progress-wrap.vis { opacity: 1; }
+    .cyber-progress-track {
+      height: 2px;
+      background: #0e2a16;
+      border-radius: 1px;
+      border: 1px solid #1a4a24;
+      overflow: hidden;
+      position: relative;
+    }
+    .cyber-progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3a8050, #68b06a, #a0e0b0);
+      transition: width 0.1s linear;
+      box-shadow: 0 0 8px #68b06a;
+      position: relative;
+    }
+    .cyber-progress-fill::after {
+      content: '';
+      position: absolute;
+      right: 0; top: -2px;
+      width: 3px; height: 4px;
+      background: #c0f0d0;
+      box-shadow: 0 0 6px #c0f0d0;
+      border-radius: 1px;
+    }
+    .cyber-status {
+      font-family: 'Courier New', monospace;
+      font-size: 0.58rem;
+      color: #3a7a50;
+      letter-spacing: 0.12em;
+      margin-top: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cyber-status-dot {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: #68b06a;
+      box-shadow: 0 0 4px #68b06a;
+      flex-shrink: 0;
+      animation: hdrBlink 1s ease-in-out infinite;
+    }
+    .cyber-tap {
+      font-family: 'Courier New', monospace;
+      font-size: 0.52rem;
+      color: #1e5030;
+      letter-spacing: 0.15em;
+      margin-top: 8px;
+      text-align: center;
+      opacity: 0;
+      animation: tapBlink 2s ease-in-out infinite;
+      animation-delay: 1s;
+    }
+    @keyframes tapBlink { 0%,100%{opacity:0} 50%{opacity:1} }
+
+    /* ══════════════════════════════════════════
+       CSS VARIABLES & BASE
+    ══════════════════════════════════════════ */
+    :root {
+      --bg: #1a1f1c; --card: #222827; --text: #dfeee0; --text-sub: #6b7c6e;
+      --accent: #68b06a; --accent-hover: #4f9a52;
+      --btn-bg: #2a2f2d; --btn-border: #555;
+      --barcode-bg: #e6efe7; --barcode-text: #1f2b21;
+      --social-bg: #2a2f2d; --social-hover: #3a413f;
+      --logo-filter: brightness(1.15) saturate(1.2);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0; padding: 1rem;
+      text-align: center;
+      transition: background 0.4s, color 0.4s;
+    }
+
+    .container {
+      background: var(--card); color: var(--text);
+      padding: 1.5rem; border-radius: 1rem;
+      max-width: 450px; margin: auto;
+      box-shadow: 0 20px rgba(0,0,0,0.5);
+      transition: background 0.4s, color 0.4s;
+      position: relative;
+    }
+
+    #sainsburysLogo {
+      max-width: 100%; height: auto;
+      filter: var(--logo-filter); transition: filter 0.5s;
+    }
+
+    input, button {
+      padding: 0.6rem; margin: 0.5rem 0;
+      font-size: 0.8rem; border-radius: 0.5rem; border: none;
+    }
+
+    input[type="text"], input[type="number"] {
+      background: var(--btn-bg); color: var(--text);
+      border: 1px solid var(--btn-border);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    input::placeholder { color: var(--text-sub); }
+
+    button.price-button {
+      background: var(--accent); color: #fff;
+      margin: 0.3rem; cursor: pointer; transition: background 0.2s;
+    }
+    button.price-button:hover { background: var(--accent-hover); }
+
+    .input-row { display: flex; align-items: center; gap: 0.4rem; margin: 0.5rem 0; }
+    .input-row input[type="text"] { flex: 1; margin: 0; width: 0; }
+
+    .scan-btn {
+      flex-shrink: 0; background: var(--accent); color: #fff;
+      border: none; border-radius: 0.5rem;
+      padding: 0.55rem 0.65rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.15s; margin: 0;
+    }
+    .scan-btn:hover { background: var(--accent-hover); transform: scale(1.05); }
+
+    .barcode-frame {
+      background: var(--barcode-bg); padding: 1rem;
+      border-radius: 0.8rem; margin-top: 1rem; transition: background 0.4s;
+    }
+    .barcode-label { font-size: 0.9rem; margin-bottom: 0.3rem; color: var(--barcode-text); font-weight: bold; }
+    .barcode-price { font-size: 1rem; margin-top: 0.45rem; color: var(--barcode-text); font-weight: 700; letter-spacing: 0.04em; min-height: 1.3em; }
+    canvas { max-width: 100%; }
+    .watermark { color: var(--text-sub); margin-top: 0.5rem; font-size: 0.72rem; line-height: 1.55; }
+
+    .socials { margin-top: 1rem; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+    .social-item { background: var(--social-bg); padding: 0.5rem 0.8rem; border-radius: 0.6rem; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem; transition: background 0.2s; }
+    .social-item:hover { background: var(--social-hover); }
+    .copy-msg { font-size: 0.7rem; color: var(--accent); display: none; }
+
+    .bottom-row { margin-top: 1.2rem; display: flex; align-items: center; justify-content: center; gap: 1rem; }
+    .themes-btn { background: var(--btn-bg); color: var(--text); border: 1px solid var(--btn-border); border-radius: 0.6rem; padding: 0.5rem 1rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-size: 0.82rem; margin: 0; transition: background 0.2s, transform 0.15s; }
+    .themes-btn:hover { background: var(--social-hover); transform: scale(1.03); }
+    .triad-img { width: 50px; height: auto; opacity: 0.82; filter: var(--logo-filter); transition: filter 0.5s, opacity 0.3s; }
+    .triad-img:hover { opacity: 1; }
+
+    /* ══════════════════════════════════════════
+       DEBUG MENU
+    ══════════════════════════════════════════ */
+    .debug-btn {
+      position: absolute; top: 0.75rem; right: 0.75rem;
+      background: none; border: none; color: var(--text-sub);
+      cursor: pointer; padding: 0.3rem 0.4rem; border-radius: 0.4rem;
+      font-size: 1.1rem; line-height: 1; letter-spacing: 1px;
+      margin: 0; transition: color 0.2s, background 0.2s; z-index: 10;
+    }
+    .debug-btn:hover { color: var(--text); background: rgba(128,128,128,0.12); }
+
+    .debug-panel {
+      position: absolute; top: 2.6rem; right: 0.75rem;
+      background: var(--card); border: 1px solid var(--btn-border);
+      border-radius: 0.8rem; padding: 0.9rem 1rem; width: 240px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+      z-index: 50; text-align: left;
+      opacity: 0; pointer-events: none;
+      transform: translateY(-6px) scale(0.97);
+      transform-origin: top right;
+      transition: opacity 0.22s ease, transform 0.22s cubic-bezier(.22,1,.36,1);
+    }
+    .debug-panel.open { opacity: 1; pointer-events: all; transform: translateY(0) scale(1); }
+
+    .debug-panel-title { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-sub); margin-bottom: 0.6rem; font-weight: 700; }
+    .debug-row { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.76rem; color: var(--text); border-bottom: 1px solid rgba(128,128,128,0.1); }
+    .debug-row:last-of-type { border-bottom: none; }
+    .debug-row-label { color: var(--text-sub); font-size: 0.7rem; }
+    .debug-badge { font-size: 0.68rem; font-weight: 700; padding: 0.15rem 0.45rem; border-radius: 0.3rem; background: var(--btn-bg); color: var(--accent); border: 1px solid var(--btn-border); }
+    .debug-badge.ios    { color: #a0c8ff; }
+    .debug-badge.android{ color: #a8e6a0; }
+    .debug-badge.desktop{ color: #d0b8ff; }
+    .debug-badge.override { color: #ffcc88; }
+    .debug-divider { border: none; border-top: 1px solid rgba(128,128,128,0.15); margin: 0.6rem 0 0.5rem; }
+    .debug-override-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-sub); margin-bottom: 0.4rem; }
+    .debug-override-btns { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+    .debug-override-btn { flex: 1; min-width: 55px; background: var(--btn-bg); color: var(--text); border: 1px solid var(--btn-border); border-radius: 0.4rem; padding: 0.3rem 0.4rem; font-size: 0.68rem; cursor: pointer; margin: 0; transition: background 0.15s, border-color 0.15s; }
+    .debug-override-btn:hover { background: var(--social-hover); }
+    .debug-override-btn.active-override { border-color: var(--accent); color: var(--accent); }
+
+    .debug-reload-btn {
+      width: 100%; background: var(--btn-bg); color: var(--text);
+      border: 1px solid var(--btn-border); border-radius: 0.4rem;
+      padding: 0.4rem; font-size: 0.72rem; cursor: pointer; margin: 0;
+      margin-top: 0.5rem; transition: background 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .debug-reload-btn:hover { background: var(--social-hover); }
+
+    /* Theme section in debug */
+    .debug-theme-section { margin-top: 0.5rem; }
+    .debug-theme-grid { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.3rem; }
+    .debug-theme-dot {
+      width: 22px; height: 22px; border-radius: 50%; cursor: pointer;
+      border: 2px solid transparent; transition: border-color 0.2s, transform 0.15s;
+      position: relative; overflow: hidden;
+    }
+    .debug-theme-dot:hover { transform: scale(1.15); }
+    .debug-theme-dot.active { border-color: var(--accent); }
+
+    /* ══════════════════════════════════════════
+       SCANNER MODAL
+    ══════════════════════════════════════════ */
+    .scanner-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .scanner-overlay.open { opacity: 1; pointer-events: all; }
+
+    .scanner-modal {
+      position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -46%) scale(0.9);
+      z-index: 201; background: var(--card);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 1.3rem; padding: 1.4rem;
+      width: min(380px, 92vw);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.35s ease, transform 0.35s cubic-bezier(.22,1,.36,1);
+    }
+    .scanner-modal.open { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
+
+    .scanner-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .scanner-title { font-size: 0.95rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .scanner-close { background: none; border: none; color: var(--text-sub); font-size: 1.3rem; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.4rem; transition: color 0.2s, background 0.2s; line-height: 1; margin: 0; }
+    .scanner-close:hover { color: var(--text); background: rgba(128,128,128,0.12); }
+
+    #scannerTarget {
+      position: relative; width: 100%;
+      border-radius: 0.9rem; overflow: hidden;
+      background: #000; aspect-ratio: 4/3;
+    }
+    #scannerTarget video { width: 100% !important; height: 100% !important; object-fit: cover; display: block; }
+    #scannerTarget canvas.drawingBuffer { display: none; }
+
+    .scan-guide { position: absolute; inset: 10%; pointer-events: none; z-index: 2; }
+    .scan-guide::before, .scan-guide::after,
+    .scan-guide-inner::before, .scan-guide-inner::after {
+      content: ''; position: absolute; width: 22px; height: 22px;
+      border-color: var(--accent); border-style: solid; opacity: 0.9;
+    }
+    .scan-guide::before       { top: 0;    left: 0;   border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .scan-guide::after        { top: 0;    right: 0;  border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .scan-guide-inner::before { bottom: 0; left: 0;   border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .scan-guide-inner::after  { bottom: 0; right: 0;  border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+    .scan-line {
+      position: absolute; left: 8%; width: 84%; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: scanline 2s ease-in-out infinite; top: 50%; z-index: 3;
+    }
+    @keyframes scanline {
+      0%   { top: 12%; opacity: 0; } 8%   { opacity: 1; }
+      92%  { opacity: 1; } 100% { top: 88%; opacity: 0; }
+    }
+
+    .scanner-status { margin-top: 0.85rem; font-size: 0.8rem; color: var(--text-sub); min-height: 1.4em; transition: color 0.3s; }
+    .scanner-status.success { color: var(--accent); font-weight: 600; }
+    .scanner-status.error   { color: #e05555; }
+
+    .camera-select-wrap { margin-top: 0.7rem; }
+    #cameraSelect { width: 100%; background: var(--btn-bg); color: var(--text); border: 1px solid var(--btn-border); border-radius: 0.5rem; padding: 0.5rem; font-size: 0.78rem; cursor: pointer; margin: 0; }
+
+    /* ══════════════════════════════════════════
+       THEME SYSTEM
+    ══════════════════════════════════════════ */
+    .theme-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.35s ease; }
+    .theme-overlay.open { opacity: 1; pointer-events: all; }
+
+    .theme-panel { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -46%) scale(0.88); z-index: 101; background: var(--card); border: 1px solid rgba(255,255,255,0.09); border-radius: 1.3rem; padding: 1.5rem 1.3rem; width: min(420px, 92vw); box-shadow: 0 30px 80px rgba(0,0,0,0.65); opacity: 0; pointer-events: none; transition: opacity 0.35s ease, transform 0.35s cubic-bezier(.22,1,.36,1); }
+    .theme-panel.open { opacity: 1; pointer-events: all; transform: translate(-50%, -50%) scale(1); }
+    .theme-panel-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+    .theme-panel-title { font-size: 1rem; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    .theme-close { background: none; border: none; color: var(--text-sub); font-size: 1.3rem; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.4rem; transition: color 0.2s, background 0.2s; line-height: 1; margin: 0; }
+    .theme-close:hover { color: var(--text); background: rgba(128,128,128,0.12); }
+    .theme-section-label { font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text-sub); text-align: left; margin: 0.8rem 0 0.4rem; }
+    .theme-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.45rem; }
+    .theme-card { border-radius: 0.7rem; padding: 0.5rem 0.25rem; cursor: pointer; border: 2px solid transparent; transition: border-color 0.2s, transform 0.18s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; }
+    .theme-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.3); }
+    .theme-card.active { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(104,176,106,0.22); }
+    .theme-swatch { width: 36px; height: 36px; border-radius: 50%; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.28); }
+    .theme-swatch-half { position: absolute; top: 0; width: 50%; height: 100%; }
+    .theme-swatch-left  { left: 0; }
+    .theme-swatch-right { right: 0; }
+
+    [data-theme="forest"]   { background:#1e2922; } [data-theme="forest"]   .theme-swatch-left{background:#1a1f1c;} [data-theme="forest"]   .theme-swatch-right{background:#68b06a;}
+    [data-theme="ocean"]    { background:#111a28; } [data-theme="ocean"]    .theme-swatch-left{background:#0d1520;} [data-theme="ocean"]    .theme-swatch-right{background:#3a8eff;}
+    [data-theme="violet"]   { background:#1c1428; } [data-theme="violet"]   .theme-swatch-left{background:#130e1f;} [data-theme="violet"]   .theme-swatch-right{background:#a066e8;}
+    [data-theme="ember"]    { background:#251410; } [data-theme="ember"]    .theme-swatch-left{background:#1c0e0a;} [data-theme="ember"]    .theme-swatch-right{background:#e8572a;}
+    [data-theme="arctic"]   { background:#0d1e22; } [data-theme="arctic"]   .theme-swatch-left{background:#091518;} [data-theme="arctic"]   .theme-swatch-right{background:#00c4b4;}
+    [data-theme="obsidian"] { background:#1a1c20; } [data-theme="obsidian"] .theme-swatch-left{background:#141618;} [data-theme="obsidian"] .theme-swatch-right{background:#a0aec0;}
+    [data-theme="mint"]     { background:#e8f5ea; } [data-theme="mint"]     .theme-swatch-left{background:#f3faf4;} [data-theme="mint"]     .theme-swatch-right{background:#2e9e58;}
+    [data-theme="golden"]   { background:#fdf3e3; } [data-theme="golden"]   .theme-swatch-left{background:#fffaf2;} [data-theme="golden"]   .theme-swatch-right{background:#d97a18;}
+    [data-theme="cherry"]   { background:#fce8ef; } [data-theme="cherry"]   .theme-swatch-left{background:#fff0f5;} [data-theme="cherry"]   .theme-swatch-right{background:#e0436a;}
+    [data-theme="lavender"] { background:#f0ecfc; } [data-theme="lavender"] .theme-swatch-left{background:#f8f5ff;} [data-theme="lavender"] .theme-swatch-right{background:#7c4ddb;}
+    [data-theme="peach"]    { background:#fef0e8; } [data-theme="peach"]    .theme-swatch-left{background:#fff7f2;} [data-theme="peach"]    .theme-swatch-right{background:#e8733a;}
+    [data-theme="sky"]      { background:#e8f4fc; } [data-theme="sky"]      .theme-swatch-left{background:#f0f8ff;} [data-theme="sky"]      .theme-swatch-right{background:#1a90d4;}
+    /* Blueprint swatch */
+    [data-theme="blueprint"] { background:#e8e8e8; } [data-theme="blueprint"] .theme-swatch-left{background:#ffffff;} [data-theme="blueprint"] .theme-swatch-right{background:#000000;}
+
+    body.theme-forest   { --bg:#1a1f1c; --card:#222827; --text:#dfeee0; --text-sub:#6b7c6e; --accent:#68b06a; --accent-hover:#4f9a52; --btn-bg:#2a2f2d; --btn-border:#555; --barcode-bg:#e6efe7; --barcode-text:#1f2b21; --social-bg:#2a2f2d; --social-hover:#3a413f; --logo-filter:brightness(1.15) saturate(1.2); }
+    body.theme-ocean    { --bg:#0d1520; --card:#111e30; --text:#c8ddfa; --text-sub:#4a6080; --accent:#3a8eff; --accent-hover:#1a70f0; --btn-bg:#162035; --btn-border:#2a4060; --barcode-bg:#ddeeff; --barcode-text:#061428; --social-bg:#162035; --social-hover:#1e2e48; --logo-filter:brightness(1.2) hue-rotate(160deg) saturate(1.8); }
+    body.theme-violet   { --bg:#130e1f; --card:#1c1428; --text:#e0d4f8; --text-sub:#6a5080; --accent:#a066e8; --accent-hover:#8244d4; --btn-bg:#261b3a; --btn-border:#4a3060; --barcode-bg:#f0e8ff; --barcode-text:#1a0a30; --social-bg:#261b3a; --social-hover:#32244e; --logo-filter:brightness(1.2) hue-rotate(260deg) saturate(2); }
+    body.theme-ember    { --bg:#1c0e0a; --card:#251410; --text:#f8d4c0; --text-sub:#8a5040; --accent:#e8572a; --accent-hover:#c83c14; --btn-bg:#351810; --btn-border:#6a3020; --barcode-bg:#ffe8d8; --barcode-text:#2a0e04; --social-bg:#351810; --social-hover:#46221a; --logo-filter:brightness(1.2) hue-rotate(100deg) saturate(2.2); }
+    body.theme-arctic   { --bg:#091518; --card:#0d1e22; --text:#b8eee8; --text-sub:#3a7068; --accent:#00c4b4; --accent-hover:#00a898; --btn-bg:#102428; --btn-border:#1e4848; --barcode-bg:#d4f8f4; --barcode-text:#041414; --social-bg:#102428; --social-hover:#163438; --logo-filter:brightness(1.2) hue-rotate(140deg) saturate(2); }
+    body.theme-obsidian { --bg:#141618; --card:#1a1c20; --text:#d0d8e4; --text-sub:#505868; --accent:#a0aec0; --accent-hover:#8090a8; --btn-bg:#242830; --btn-border:#404858; --barcode-bg:#e8ecf4; --barcode-text:#101418; --social-bg:#242830; --social-hover:#303840; --logo-filter:brightness(1.05) saturate(0.25) contrast(1.15); }
+    body.theme-mint     { --bg:#f3faf4; --card:#ffffff; --text:#1f2b21; --text-sub:#6a8a6e; --accent:#2e9e58; --accent-hover:#227840; --btn-bg:#e4f4e6; --btn-border:#b0d8b8; --barcode-bg:#d4eeda; --barcode-text:#0e2018; --social-bg:#e4f4e6; --social-hover:#cfebd4; --logo-filter:brightness(0.22) saturate(1.6); }
+    body.theme-golden   { --bg:#fffaf2; --card:#ffffff; --text:#3a2000; --text-sub:#9a7040; --accent:#d97a18; --accent-hover:#b86010; --btn-bg:#faeede; --btn-border:#e8c898; --barcode-bg:#fde8c8; --barcode-text:#2a1400; --social-bg:#faeede; --social-hover:#f5e0c0; --logo-filter:brightness(0.18) sepia(0.8) saturate(3) hue-rotate(20deg); }
+    body.theme-cherry   { --bg:#fff0f5; --card:#ffffff; --text:#4a0020; --text-sub:#9a6070; --accent:#e0436a; --accent-hover:#c82850; --btn-bg:#fce8ef; --btn-border:#f0b0c8; --barcode-bg:#ffd8e8; --barcode-text:#3a001a; --social-bg:#fce8ef; --social-hover:#f8d0e0; --logo-filter:brightness(0.18) sepia(1) saturate(6) hue-rotate(300deg); }
+    body.theme-lavender { --bg:#f8f5ff; --card:#ffffff; --text:#2a1a50; --text-sub:#7a68a0; --accent:#7c4ddb; --accent-hover:#6038c0; --btn-bg:#ede8fc; --btn-border:#c8b8f0; --barcode-bg:#e8e0ff; --barcode-text:#18083a; --social-bg:#ede8fc; --social-hover:#e0d8f8; --logo-filter:brightness(0.2) sepia(1) saturate(5) hue-rotate(240deg); }
+    body.theme-peach    { --bg:#fff7f2; --card:#ffffff; --text:#3a1800; --text-sub:#a06040; --accent:#e8733a; --accent-hover:#cc5820; --btn-bg:#faeade; --btn-border:#f0c0a0; --barcode-bg:#fde0c8; --barcode-text:#2a0e00; --social-bg:#faeade; --social-hover:#f5d8c0; --logo-filter:brightness(0.18) sepia(1) saturate(4) hue-rotate(60deg); }
+    body.theme-sky      { --bg:#f0f8ff; --card:#ffffff; --text:#0a1e38; --text-sub:#5880a8; --accent:#1a90d4; --accent-hover:#0070b8; --btn-bg:#e0f0fc; --btn-border:#a8d0ee; --barcode-bg:#d0e8f8; --barcode-text:#041428; --social-bg:#e0f0fc; --social-hover:#cce4f5; --logo-filter:brightness(0.2) saturate(1.8) hue-rotate(160deg); }
+
+    /* ══ BLUEPRINT THEME — crude, raw, outlined ══ */
+    body.theme-blueprint {
+      --bg: #f5f5f5;
+      --card: #ffffff;
+      --text: #000000;
+      --text-sub: #555555;
+      --accent: #000000;
+      --accent-hover: #333333;
+      --btn-bg: #ffffff;
+      --btn-border: #000000;
+      --barcode-bg: #ffffff;
+      --barcode-text: #000000;
+      --social-bg: #ffffff;
+      --social-hover: #eeeeee;
+      --logo-filter: brightness(0) saturate(0);
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    body.theme-blueprint .container {
+      background: #ffffff;
+      border: 2px solid #000000;
+      border-radius: 0;
+      box-shadow: 4px 4px 0 #000000;
+    }
+
+    body.theme-blueprint input[type="text"],
+    body.theme-blueprint input[type="number"] {
+      background: #ffffff;
+      border: 2px solid #000000;
+      border-radius: 0;
+      color: #000000;
+      font-family: 'Courier New', Courier, monospace;
+    }
+
+    body.theme-blueprint button.price-button {
+      background: #ffffff;
+      color: #000000;
+      border: 2px solid #000000;
+      border-radius: 0;
+      font-family: 'Courier New', Courier, monospace;
+      font-weight: 700;
+    }
+    body.theme-blueprint button.price-button:hover {
+      background: #000000;
+      color: #ffffff;
+    }
+
+    body.theme-blueprint .scan-btn {
+      background: #000000;
+      border-radius: 0;
+      border: 2px solid #000000;
+    }
+    body.theme-blueprint .scan-btn:hover { background: #333; }
+
+    body.theme-blueprint .barcode-frame {
+      background: #ffffff;
+      border: 2px solid #000000;
+      border-radius: 0;
+    }
+
+    body.theme-blueprint .social-item {
+      background: #ffffff;
+      border: 2px solid #000000;
+      border-radius: 0;
+      font-family: 'Courier New', Courier, monospace;
+    }
+    body.theme-blueprint .social-item:hover { background: #eeeeee; }
+
+    body.theme-blueprint .themes-btn {
+      background: #ffffff;
+      border: 2px solid #000000;
+      border-radius: 0;
+      font-family: 'Courier New', Courier, monospace;
+      box-shadow: 2px 2px 0 #000;
+    }
+    body.theme-blueprint .themes-btn:hover { background: #eeeeee; }
+
+    body.theme-blueprint .debug-panel {
+      border: 2px solid #000000;
+      border-radius: 0;
+      background: #ffffff;
+      box-shadow: 4px 4px 0 #000;
+    }
+
+    body.theme-blueprint .debug-badge {
+      background: #ffffff;
+      border: 2px solid #000000;
+      border-radius: 0;
+      color: #000000;
+    }
+
+    body.theme-blueprint .debug-override-btn {
+      background: #ffffff;
+      border: 2px solid #000;
+      border-radius: 0;
+      color: #000000;
+    }
+    body.theme-blueprint .debug-override-btn:hover { background: #000; color: #fff; }
+    body.theme-blueprint .debug-override-btn.active-override { background: #000; color: #fff; }
+
+    body.theme-blueprint .debug-reload-btn {
+      background: #ffffff;
+      border: 2px solid #000;
+      border-radius: 0;
+      color: #000;
+    }
+    body.theme-blueprint .debug-reload-btn:hover { background: #eee; }
+
+    body.theme-blueprint .watermark { color: #999; font-family: 'Courier New', Courier, monospace; }
+
+    /* Blueprint scanner modal */
+    body.theme-blueprint .scanner-modal,
+    body.theme-blueprint .theme-panel {
+      border-radius: 0;
+      border: 2px solid #000;
+      box-shadow: 6px 6px 0 #000;
+    }
+
+    body.theme-blueprint input { color: #000; }
+
+    body.theme-mint input, body.theme-golden input, body.theme-cherry input,
+    body.theme-lavender input, body.theme-peach input, body.theme-sky input { color: var(--text); }
+  </style>
+</head>
+<body class="theme-forest">
+
+<!-- ══════════════════════════════════════════
+     CYBER LOADING SCREEN
+══════════════════════════════════════════ -->
+<div id="loadingScreen" onclick="skipLoader()">
+  <div class="cyber-stage">
+
+    <!-- Top header bar -->
+    <div class="cyber-header" id="cyHdr">
+      <span><span class="cyber-header-dot"></span> SYSTEM BOOT</span>
+      <span id="cyHdrPct">0%</span>
+    </div>
+
+    <!-- Card outline -->
+    <div class="cyber-card" id="cyCard">
+      <div class="cyber-corner tl" id="cyCtl"></div>
+      <div class="cyber-corner tr" id="cyCtr"></div>
+      <div class="cyber-corner bl" id="cyCbl"></div>
+      <div class="cyber-corner br" id="cyCbr"></div>
+
+      <!-- Logo -->
+      <div class="cyber-el" id="cyLogo">
+        <div class="cyber-logo-row">SAINSBURY'S</div>
+      </div>
+
+      <!-- Input row -->
+      <div class="cyber-el" id="cyInput1">
+        <div class="cyber-input-row">
+          <div class="cyber-input-cursor"></div>
+          <div class="cyber-input-fill"></div>
+          <div class="cyber-input-icon"></div>
+        </div>
+      </div>
+
+      <!-- Label input -->
+      <div class="cyber-el" id="cyInput2">
+        <div class="cyber-input-row">
+          <div class="cyber-input-cursor" style="animation-delay:0.3s"></div>
+          <div class="cyber-input-fill"></div>
+        </div>
+      </div>
+
+      <!-- Price buttons -->
+      <div class="cyber-btn-row" id="cyBtns">
+        <div class="cyber-btn" id="cyBtn0"></div>
+        <div class="cyber-btn" id="cyBtn1"></div>
+        <div class="cyber-btn" id="cyBtn2"></div>
+        <div class="cyber-btn accent" id="cyBtn3"></div>
+      </div>
+
+      <!-- Barcode frame -->
+      <div class="cyber-el" id="cyBcFrame" style="margin-top:0.55rem;">
+        <div class="cyber-barcode-frame">
+          <div class="cyber-barcode-label-line" id="cyBcLabel"></div>
+          <div class="cyber-barcode-bars" id="cyBcBars">
+            <!-- bars injected by JS -->
+          </div>
+          <div class="cyber-price-line" id="cyBcPrice"></div>
+        </div>
+      </div>
+
+      <!-- Bottom socials + themes -->
+      <div class="cyber-el" id="cySocials" style="margin-bottom:0;">
+        <div class="cyber-bottom-row">
+          <div class="cyber-social"><div class="cyber-social-dot"></div><div class="cyber-social-line"></div></div>
+          <div class="cyber-social"><div class="cyber-social-dot"></div><div class="cyber-social-line"></div></div>
+          <div class="cyber-themes-btn"><div class="cyber-themes-icon"></div><div class="cyber-themes-line"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Title footer -->
+    <div class="cyber-footer" id="cyFooter">
+      <div>
+        <div class="cyber-title">EASYP55</div>
+        <div class="cyber-sub">BARCODE GENERATOR</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="cyber-progress-wrap" id="cyProgWrap">
+      <div class="cyber-progress-track">
+        <div class="cyber-progress-fill" id="lsBar"></div>
+      </div>
+      <div class="cyber-status">
+        <div class="cyber-status-dot"></div>
+        <span id="matrixStatus">INITIALISING...</span>
+      </div>
+    </div>
+
+    <div class="cyber-tap">[ TAP TO SKIP ]</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     SCANNER
+══════════════════════════════════════════ -->
+<div class="scanner-overlay" id="scannerOverlay" onclick="closeScannerFromOverlay(event)"></div>
+<div class="scanner-modal" id="scannerModal">
+  <div class="scanner-header">
+    <div class="scanner-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+      Scan Barcode
+    </div>
+    <button class="scanner-close" onclick="closeScanner()">✕</button>
+  </div>
+  <div id="scannerTarget">
+    <div class="scan-guide"><div class="scan-guide-inner"></div></div>
+    <div class="scan-line"></div>
+  </div>
+  <div class="scanner-status" id="scannerStatus">Point camera at a barcode...</div>
+  <div class="camera-select-wrap" id="cameraSelectWrap" style="display:none;">
+    <select id="cameraSelect" onchange="switchCamera()"></select>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     THEME PANEL
+══════════════════════════════════════════ -->
+<div class="theme-overlay" id="themeOverlay" onclick="closeThemePanel()"></div>
+<div class="theme-panel" id="themePanel">
+  <div class="theme-panel-header">
+    <div class="theme-panel-title">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+        <polygon points="12,2 22,20 2,20" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" fill="none"/>
+        <line x1="12" y1="2" x2="12" y2="20" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" opacity="0.45"/>
+        <line x1="12" y1="20" x2="21" y2="20" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+        <line x1="2"  y1="20" x2="9"  y2="20" stroke="#3a8eff"      stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      Themes
+    </div>
+    <button class="theme-close" onclick="closeThemePanel()">✕</button>
+  </div>
+  <div class="theme-section-label">Dark</div>
+  <div class="theme-grid">
+    <div class="theme-card" data-theme="forest"   onclick="applyTheme('forest',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="ocean"    onclick="applyTheme('ocean',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="violet"   onclick="applyTheme('violet',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="ember"    onclick="applyTheme('ember',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="arctic"   onclick="applyTheme('arctic',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="obsidian" onclick="applyTheme('obsidian',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+  </div>
+  <div class="theme-section-label">Light</div>
+  <div class="theme-grid">
+    <div class="theme-card" data-theme="mint"     onclick="applyTheme('mint',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="golden"   onclick="applyTheme('golden',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="cherry"   onclick="applyTheme('cherry',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="lavender" onclick="applyTheme('lavender',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="peach"    onclick="applyTheme('peach',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+    <div class="theme-card" data-theme="sky"      onclick="applyTheme('sky',this)"><div class="theme-swatch"><div class="theme-swatch-half theme-swatch-left"></div><div class="theme-swatch-half theme-swatch-right"></div></div></div>
+  </div>
+  <div class="theme-section-label">Special</div>
+  <div class="theme-grid" style="grid-template-columns: repeat(6, 1fr);">
+    <div class="theme-card" data-theme="blueprint" onclick="applyTheme('blueprint',this)">
+      <div class="theme-swatch" style="border: 2px solid #000;">
+        <div class="theme-swatch-half theme-swatch-left" style="background:#ffffff;"></div>
+        <div class="theme-swatch-half theme-swatch-right" style="background:#000000;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MAIN CONTAINER
+══════════════════════════════════════════ -->
+<div class="container">
+
+  <button class="debug-btn" onclick="toggleDebugMenu(event)" title="Debug">⋮</button>
+  <div class="debug-panel" id="debugPanel">
+    <div class="debug-panel-title">⚙ Debug</div>
+    <div class="debug-row"><span class="debug-row-label">Detected OS</span><span class="debug-badge" id="dbgOS">—</span></div>
+    <div class="debug-row"><span class="debug-row-label">Browser</span><span class="debug-badge" id="dbgBrowser">—</span></div>
+    <div class="debug-row"><span class="debug-row-label">Camera API</span><span class="debug-badge" id="dbgCameraAPI">—</span></div>
+    <div class="debug-row"><span class="debug-row-label">Scanner lib</span><span class="debug-badge" id="dbgLib">—</span></div>
+    <div class="debug-row"><span class="debug-row-label">Active mode</span><span class="debug-badge override" id="dbgActive">—</span></div>
+    <hr class="debug-divider"/>
+    <div class="debug-override-label">Force scanner mode</div>
+    <div class="debug-override-btns">
+      <button class="debug-override-btn" id="ovr-auto"    onclick="setOverride('auto')">Auto</button>
+      <button class="debug-override-btn" id="ovr-ios"     onclick="setOverride('ios')">iOS</button>
+      <button class="debug-override-btn" id="ovr-android" onclick="setOverride('android')">Android</button>
+      <button class="debug-override-btn" id="ovr-desktop" onclick="setOverride('desktop')">Desktop</button>
+    </div>
+    <hr class="debug-divider"/>
+    <div class="debug-override-label">Theme</div>
+    <div class="debug-override-btns" style="flex-wrap:wrap;">
+      <button class="debug-override-btn" onclick="applyTheme('blueprint', document.querySelector('[data-theme=blueprint]'))">Blueprint</button>
+      <button class="debug-override-btn" onclick="applyTheme('forest', document.querySelector('[data-theme=forest]'))">Forest</button>
+      <button class="debug-override-btn" onclick="applyTheme('obsidian', document.querySelector('[data-theme=obsidian]'))">Obsidian</button>
+    </div>
+    <button class="debug-reload-btn" onclick="replayLoader()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.5"/>
+      </svg>
+      Replay loading screen
+    </button>
+  </div>
+
+  <img id="sainsburysLogo" src="Sainsbury's_idRe1DHyjA_1.png" alt="Sainsbury's Logo" />
+
+  <div class="input-row">
+    <input type="text" id="productCode" placeholder="Enter 13 or 8 digit barcode" maxlength="13"
+           oninput="this.value=this.value.replace(/\D/g,'').slice(0,13)" />
+    <button class="scan-btn" onclick="openScanner()" title="Scan barcode with camera">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </button>
+  </div>
+
+  <input type="text" id="barcodeLabelInput" placeholder="Enter label for barcode" maxlength="30" style="width:calc(100% - 1rem);" />
+
+  <div>
+    <button class="price-button" onclick="setPriceAndGenerate(10)">10p</button>
+    <button class="price-button" onclick="setPriceAndGenerate(49)">49p</button>
+    <button class="price-button" onclick="setPriceAndGenerate(100)">£1</button>
+    <button class="price-button" onclick="showCustomPrice()">Custom</button>
+  </div>
+
+  <div id="customPriceContainer" style="display:none;">
+    <input type="number" id="price" placeholder="Enter price in pence" min="1" max="9999" style="width:calc(100% - 1rem);" />
+    <button onclick="generateBarcode()">Generate Barcode</button>
+  </div>
+
+  <div class="barcode-frame">
+    <div id="barcodeLabel" class="barcode-label"></div>
+    <canvas id="barcodeCanvas" width="400" height="150"></canvas>
+    <div id="barcodePrice" class="barcode-price"></div>
+    <div class="watermark">EasyP55 little fraud boy bbancm <br> oli got caught by co-op police <br> fuhhh paying full price</div>
+  </div>
+
+  <div class="socials">
+    <div class="social-item" onclick="copyText('imjustsomeguyy', this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#5865F2"><path d="M20 4a16 16 0 0 0-4-1l-.2.4a14 14 0 0 1 3.6 1.7 13 13 0 0 0-3.2-1.5 12 12 0 0 0-4.2 0A13 13 0 0 0 8.8 5a14 14 0 0 1 3.6-1.7L12 3a16 16 0 0 0-4 1C5.6 7.6 5 11 5.2 14.4A16 16 0 0 0 9.6 16l.8-1.1a10 10 0 0 1-1.3-.6l.3-.2c2.5 1.1 5.3 1.1 7.8 0l.3.2c-.4.2-.9.4-1.3.6l.8 1.1a16 16 0 0 0 4.4-1.6C19 11 18.4 7.6 20 4z"/></svg>
+      imjustsomeguyy <span class="copy-msg">Copied!</span>
+    </div>
+    <div class="social-item" onclick="copyText('somerandomahguy', this)">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFC00"><path d="M12 2c2.5 0 4.5 2 4.5 4.5v3.2c.7.5 1.6.8 2.5.8.3 0 .5.2.5.5s-.2.5-.5.5c-.9 0-1.8.3-2.5.8v.7c0 2.5-2 4.5-4.5 4.5s-4.5-2-4.5-4.5v-.7c-.7-.5-1.6-.8-2.5-.8-.3 0-.5-.2-.5-.5s.2-.5.5-.5c.9 0 1.8-.3 2.5-.8V6.5C7.5 4 9.5 2 12 2z"/></svg>
+      somerandomahguy <span class="copy-msg">Copied!</span>
+    </div>
+  </div>
+
+  <div class="bottom-row">
+    <button class="themes-btn" onclick="openThemePanel()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <polygon points="12,2 22,20 2,20" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" fill="none"/>
+        <line x1="12" y1="2" x2="12" y2="20" stroke="currentColor" stroke-width="1" stroke-dasharray="2 2" opacity="0.45"/>
+      </svg>
+      Themes
+    </button>
+    <img src="methodtriad.png" alt="methodtriad" class="triad-img" />
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+
+<script>
+/* ══════════════════════════════════════════════════════
+   CYBER LOADING SCREEN — element-by-element build
+══════════════════════════════════════════════════════ */
+
+// Build barcode bars into the ghost frame
+(function buildBars() {
+  const container = document.getElementById('cyBcBars');
+  if (!container) return;
+  const heights = [30,50,22,50,36,50,28,44,50,20,42,50,34,50,26,48,50,32,50,24,46,50,38,50];
+  const widths  = [2,4,2,5,2,4,2,3,5,2,4,4,2,5,2,3,5,2,4,2,4,4,2,5];
+  heights.forEach((h, i) => {
+    const bar = document.createElement('div');
+    bar.className = 'cyber-bar';
+    bar.style.width  = widths[i] + 'px';
+    bar.style.height = h + 'px';
+    container.appendChild(bar);
+  });
+})();
+
+const TOTAL_DURATION = 5800; // ms total loader time
+let loaderDone     = false;
+let loaderInterval = null;
+let buildTimers    = [];
+
+const statusMessages = [
+  { pct: 0,  msg: 'INITIALISING...' },
+  { pct: 10, msg: 'LOADING UI MODULES...' },
+  { pct: 25, msg: 'RENDERING LAYOUT...' },
+  { pct: 42, msg: 'ASSEMBLING INPUTS...' },
+  { pct: 58, msg: 'BUILDING BARCODE ENGINE...' },
+  { pct: 74, msg: 'CALIBRATING SCANNER...' },
+  { pct: 88, msg: 'APPLYING THEMES...' },
+  { pct: 97, msg: 'READY.' },
+];
+
+// Sequence of elements to reveal, each with a delay (ms from start)
+const BUILD_SEQUENCE = [
+  // [delay, fn]
+  [120,  () => show('cyHdr')],
+  [300,  () => show('cyCard')],
+  [560,  () => { show('cyCtl'); show('cyCtr'); }],
+  [720,  () => { show('cyCbl'); show('cyCbr'); }],
+  [860,  () => show('cyLogo')],
+  [1080, () => show('cyInput1')],
+  [1280, () => show('cyInput2')],
+  [1460, () => showBtn('cyBtn0')],
+  [1570, () => showBtn('cyBtn1')],
+  [1680, () => showBtn('cyBtn2')],
+  [1790, () => showBtn('cyBtn3')],
+  [1940, () => show('cyBcFrame')],
+  [2060, () => animLabel()],
+  [2260, () => animBars()],
+  [3100, () => animPrice()],
+  [3300, () => show('cySocials')],
+  [3600, () => show('cyFooter')],
+  [3900, () => show('cyProgWrap')],
+];
+
+function show(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('vis');
+}
+
+function showBtn(id) {
+  const el = document.getElementById(id);
+  if (el) { el.style.transition = 'opacity 0.22s ease, transform 0.22s cubic-bezier(0.34,1.56,0.64,1), border-color 0.2s'; el.classList.add('vis'); }
+}
+
+function animLabel() {
+  const el = document.getElementById('cyBcLabel');
+  if (el) el.classList.add('vis');
+}
+
+function animBars() {
+  const bars = document.querySelectorAll('.cyber-bar');
+  bars.forEach((bar, i) => {
+    const t = setTimeout(() => bar.classList.add('vis'), i * 38);
+    buildTimers.push(t);
+  });
+}
+
+function animPrice() {
+  const el = document.getElementById('cyBcPrice');
+  if (el) el.classList.add('vis');
+}
+
+function startLoader() {
+  loaderDone = false;
+  clearAllTimers();
+
+  const screen = document.getElementById('loadingScreen');
+  screen.style.display  = 'flex';
+  screen.style.opacity  = '1';
+  screen.classList.remove('fade-out');
+
+  // Reset bar
+  const bar = document.getElementById('lsBar');
+  if (bar) bar.style.width = '0%';
+
+  // Reset all elements
+  resetLoader();
+
+  // Schedule element builds
+  BUILD_SEQUENCE.forEach(([delay, fn]) => {
+    buildTimers.push(setTimeout(fn, delay));
+  });
+
+  // Progress bar + status ticker
+  const startTime = Date.now();
+  clearInterval(loaderInterval);
+  loaderInterval = setInterval(() => {
+    const elapsed = Date.now() - startTime;
+    const pct = Math.min(100, (elapsed / TOTAL_DURATION) * 100);
+    if (bar) bar.style.width = pct + '%';
+
+    // Update header pct
+    const hdrPct = document.getElementById('cyHdrPct');
+    if (hdrPct) hdrPct.textContent = Math.floor(pct) + '%';
+
+    // Update status
+    const msg = [...statusMessages].reverse().find(m => pct >= m.pct);
+    const statusEl = document.getElementById('matrixStatus');
+    if (msg && statusEl) statusEl.textContent = msg.msg;
+
+    if (pct >= 100) finishLoader();
+  }, 40);
+}
+
+function resetLoader() {
+  // Remove .vis from all cyber elements
+  ['cyHdr','cyCard','cyCtl','cyCtr','cyCbl','cyCbr','cyLogo','cyInput1','cyInput2',
+   'cyBcFrame','cySocials','cyFooter','cyProgWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('vis');
+  });
+  ['cyBtn0','cyBtn1','cyBtn2','cyBtn3'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.remove('vis');
+  });
+  document.querySelectorAll('.cyber-bar').forEach(b => b.classList.remove('vis'));
+  const bcLabel = document.getElementById('cyBcLabel');
+  if (bcLabel) bcLabel.classList.remove('vis');
+  const bcPrice = document.getElementById('cyBcPrice');
+  if (bcPrice) bcPrice.classList.remove('vis');
+  const bar = document.getElementById('lsBar');
+  if (bar) bar.style.width = '0%';
+  const hdrPct = document.getElementById('cyHdrPct');
+  if (hdrPct) hdrPct.textContent = '0%';
+  const statusEl = document.getElementById('matrixStatus');
+  if (statusEl) statusEl.textContent = 'INITIALISING...';
+}
+
+function clearAllTimers() {
+  clearInterval(loaderInterval);
+  buildTimers.forEach(t => clearTimeout(t));
+  buildTimers = [];
+}
+
+function finishLoader() {
+  if (loaderDone) return;
+  loaderDone = true;
+  clearAllTimers();
+
+  const bar = document.getElementById('lsBar');
+  if (bar) bar.style.width = '100%';
+  const hdrPct = document.getElementById('cyHdrPct');
+  if (hdrPct) hdrPct.textContent = '100%';
+  const statusEl = document.getElementById('matrixStatus');
+  if (statusEl) statusEl.textContent = 'READY.';
+
+  // Make sure everything is shown
+  ['cyHdr','cyCard','cyCtl','cyCtr','cyCbl','cyCbr','cyLogo','cyInput1','cyInput2',
+   'cyBcFrame','cySocials','cyFooter','cyProgWrap'].forEach(show);
+  ['cyBtn0','cyBtn1','cyBtn2','cyBtn3'].forEach(showBtn);
+  document.querySelectorAll('.cyber-bar').forEach(b => b.classList.add('vis'));
+  animLabel(); animPrice();
+
+  setTimeout(() => {
+    const screen = document.getElementById('loadingScreen');
+    screen.classList.add('fade-out');
+    setTimeout(() => { screen.style.display = 'none'; }, 900);
+  }, 350);
+}
+
+function skipLoader() {
+  clearAllTimers();
+  finishLoader();
+}
+
+function replayLoader() {
+  document.getElementById('debugPanel').classList.remove('open');
+  startLoader();
+}
+
+window.addEventListener('load', startLoader);
+
+/* ══════════════════════════════════════════════════════
+   PLATFORM DETECTION
+══════════════════════════════════════════════════════ */
+const UA = navigator.userAgent || '';
+function detectOS() {
+  if (/iphone|ipad|ipod/i.test(UA)) return 'ios';
+  if (/android/i.test(UA)) return 'android';
+  if (/macintosh|mac os x/i.test(UA) && !('ontouchend' in document)) return 'macos';
+  if (/windows/i.test(UA)) return 'windows';
+  return 'linux';
+}
+function detectBrowser() {
+  if (/samsungbrowser/i.test(UA)) return 'Samsung';
+  if (/edg\//i.test(UA)) return 'Edge';
+  if (/opr\//i.test(UA)) return 'Opera';
+  if (/firefox/i.test(UA)) return 'Firefox';
+  if (/chrome/i.test(UA)) return 'Chrome';
+  if (/safari/i.test(UA)) return 'Safari';
+  return 'Unknown';
+}
+function deriveScannerMode(os) {
+  if (os === 'ios') return 'ios';
+  if (os === 'android') return 'android';
+  return 'desktop';
+}
+
+const detectedOS      = detectOS();
+const detectedBrowser = detectBrowser();
+const detectedMode    = deriveScannerMode(detectedOS);
+let   platformOverride = 'auto';
+function getActiveMode() { return platformOverride === 'auto' ? detectedMode : platformOverride; }
+
+function toggleDebugMenu(e) {
+  e.stopPropagation();
+  const panel = document.getElementById('debugPanel');
+  if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+  refreshDebugPanel();
+  panel.classList.add('open');
+}
+document.addEventListener('click', () => document.getElementById('debugPanel').classList.remove('open'));
+
+function refreshDebugPanel() {
+  const hasCam = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  const hasQ   = !!(window.Quagga);
+  const osEl   = document.getElementById('dbgOS');
+  osEl.textContent = detectedOS;
+  osEl.className   = 'debug-badge ' + (detectedOS === 'ios' ? 'ios' : detectedOS === 'android' ? 'android' : 'desktop');
+  document.getElementById('dbgBrowser').textContent   = detectedBrowser;
+  document.getElementById('dbgCameraAPI').textContent = hasCam ? 'getUserMedia ✓' : '✗ Not available';
+  document.getElementById('dbgLib').textContent       = hasQ   ? 'Quagga2 ✓'     : '✗ Not loaded';
+  const activeEl = document.getElementById('dbgActive');
+  activeEl.textContent = getActiveMode() + (platformOverride !== 'auto' ? ' (forced)' : ' (auto)');
+  ['auto','ios','android','desktop'].forEach(k => {
+    const b = document.getElementById('ovr-' + k);
+    if (b) b.classList.toggle('active-override', platformOverride === k);
+  });
+}
+function setOverride(v) { platformOverride = v; refreshDebugPanel(); }
+
+/* ══════════════════════════════════════════════════════
+   SCANNER
+══════════════════════════════════════════════════════ */
+const CONFIRM_HITS = 3;
+let scannerRunning  = false;
+let lastCode        = '';
+let hitCount        = 0;
+
+function openScanner() {
+  if (!window.Quagga) { alert('Scanner library not loaded. Please refresh.'); return; }
+  document.getElementById('scannerOverlay').classList.add('open');
+  document.getElementById('scannerModal').classList.add('open');
+  setStatus('Starting camera…', '');
+  initQuagga(getActiveMode());
+}
+
+function closeScannerFromOverlay(e) {
+  if (e.target === document.getElementById('scannerOverlay')) closeScanner();
+}
+
+function closeScanner() {
+  stopQuagga();
+  document.getElementById('scannerOverlay').classList.remove('open');
+  document.getElementById('scannerModal').classList.remove('open');
+  document.getElementById('cameraSelectWrap').style.display = 'none';
+  setStatus('Point camera at a barcode...', '');
+}
+
+function setStatus(msg, cls) {
+  const el = document.getElementById('scannerStatus');
+  el.textContent = msg;
+  el.className = 'scanner-status' + (cls ? ' ' + cls : '');
+}
+
+function buildConstraints(mode) {
+  const base = { facingMode: { ideal: 'environment' }, width: { min: 640, ideal: 1280 }, height: { min: 480, ideal: 720 } };
+  if (mode === 'desktop') { base.width = { min: 640, ideal: 1920 }; base.height = { min: 480, ideal: 1080 }; }
+  return base;
+}
+
+function initQuagga(mode) {
+  lastCode = ''; hitCount = 0;
+  Quagga.init({
+    inputStream: { name: 'Live', type: 'LiveStream', target: document.getElementById('scannerTarget'), constraints: buildConstraints(mode), willReadFrequently: true },
+    locator: { patchSize: 'medium', halfSample: true },
+    numOfWorkers: typeof navigator.hardwareConcurrency !== 'undefined' ? Math.min(navigator.hardwareConcurrency, 4) : 2,
+    frequency: 12,
+    decoder: { readers: ['ean_reader','ean_8_reader','upc_reader','upc_e_reader','code_128_reader'], debug: { drawBoundingBox: true, showPattern: true } },
+    locate: true
+  }, function(err) {
+    if (err) { handleCameraError(err); return; }
+    scannerRunning = true;
+    Quagga.start();
+    setStatus('Point camera at a barcode...', '');
+    if (mode !== 'ios') setTimeout(tryPopulateCameraSelector, 1500);
+  });
+
+  Quagga.onDetected(function(result) {
+    if (!scannerRunning) return;
+    const code = (result.codeResult.code || '').replace(/\D/g, '');
+    if (!/^(\d{13}|\d{8})$/.test(code)) return;
+    if (code === lastCode) { hitCount++; } else { lastCode = code; hitCount = 1; }
+    if (hitCount >= CONFIRM_HITS) {
+      scannerRunning = false;
+      document.getElementById('productCode').value = code;
+      setStatus('✓ Got it: ' + code, 'success');
+      setTimeout(closeScanner, 700);
+    }
+  });
+
+  Quagga.onProcessed(function(result) {
+    const ctx = Quagga.canvas.ctx.overlay;
+    const cvs = Quagga.canvas.dom.overlay;
+    if (!ctx || !cvs) return;
+    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    if (result && result.boxes) {
+      result.boxes.filter(b => b !== result.box).forEach(box => {
+        Quagga.ImageDebug.drawPath(box, { x: 0, y: 1 }, ctx, { color: 'rgba(104,176,106,0.3)', lineWidth: 2 });
+      });
+    }
+    if (result && result.box) {
+      Quagga.ImageDebug.drawPath(result.box, { x: 0, y: 1 }, ctx, { color: '#68b06a', lineWidth: 3 });
+    }
+    if (result && result.codeResult && result.codeResult.code) {
+      Quagga.ImageDebug.drawPath(result.line, { x: 'x', y: 'y' }, ctx, { color: '#68b06a', lineWidth: 3 });
+    }
+  });
+}
+
+function stopQuagga() {
+  scannerRunning = false; lastCode = ''; hitCount = 0;
+  try { Quagga.offDetected(); Quagga.offProcessed(); Quagga.stop(); } catch(e) {}
+}
+
+async function tryPopulateCameraSelector() {
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams    = devices.filter(d => d.kind === 'videoinput' && d.label);
+    if (cams.length > 1) {
+      const sel = document.getElementById('cameraSelect');
+      sel.innerHTML = '';
+      cams.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.text  = d.label || 'Camera ' + (i + 1);
+        sel.appendChild(opt);
+      });
+      const rearIdx = cams.findIndex(d => /back|rear|environment/i.test(d.label));
+      if (rearIdx >= 0) sel.selectedIndex = rearIdx;
+      document.getElementById('cameraSelectWrap').style.display = 'block';
+    }
+  } catch(e) {}
+}
+
+function switchCamera() {
+  stopQuagga();
+  const id = document.getElementById('cameraSelect').value;
+  lastCode = ''; hitCount = 0;
+  Quagga.init({
+    inputStream: { name: 'Live', type: 'LiveStream', target: document.getElementById('scannerTarget'), constraints: { deviceId: { exact: id } } },
+    locator: { patchSize: 'medium', halfSample: true },
+    numOfWorkers: 2, frequency: 12,
+    decoder: { readers: ['ean_reader','ean_8_reader','upc_reader','upc_e_reader','code_128_reader'] },
+    locate: true
+  }, function(err) {
+    if (err) { handleCameraError(err); return; }
+    scannerRunning = true; Quagga.start();
+    setStatus('Point camera at a barcode...', '');
+  });
+  Quagga.onDetected(function(result) {
+    if (!scannerRunning) return;
+    const code = (result.codeResult.code || '').replace(/\D/g, '');
+    if (!/^(\d{13}|\d{8})$/.test(code)) return;
+    if (code === lastCode) { hitCount++; } else { lastCode = code; hitCount = 1; }
+    if (hitCount >= CONFIRM_HITS) {
+      scannerRunning = false;
+      document.getElementById('productCode').value = code;
+      setStatus('✓ Got it: ' + code, 'success');
+      setTimeout(closeScanner, 700);
+    }
+  });
+}
+
+function handleCameraError(err) {
+  const name = err && (err.name || err.type || '');
+  if (/NotAllowed|PermissionDenied/i.test(name)) setStatus('Camera permission denied. Check browser settings.', 'error');
+  else if (/NotFound|DevicesNotFound/i.test(name)) setStatus('No camera found on this device.', 'error');
+  else if (/NotReadable/i.test(name)) setStatus('Camera is in use by another app.', 'error');
+  else setStatus('Could not start camera. Try closing other apps.', 'error');
+}
+
+/* ══════════════════════════════════════════════════════
+   THEME
+══════════════════════════════════════════════════════ */
+function openThemePanel()  { document.getElementById('themeOverlay').classList.add('open');    document.getElementById('themePanel').classList.add('open'); }
+function closeThemePanel() { document.getElementById('themeOverlay').classList.remove('open'); document.getElementById('themePanel').classList.remove('open'); }
+const ALL_THEMES = ['forest','ocean','violet','ember','arctic','obsidian','mint','golden','cherry','lavender','peach','sky','blueprint'];
+function applyTheme(name, card) {
+  ALL_THEMES.forEach(t => document.body.classList.remove('theme-' + t));
+  document.body.classList.add('theme-' + name);
+  document.querySelectorAll('.theme-card').forEach(c => c.classList.remove('active'));
+  if (card) card.classList.add('active');
+  setTimeout(closeThemePanel, 240);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const def = document.querySelector('.theme-card[data-theme="forest"]');
+  if (def) def.classList.add('active');
+});
+
+/* ══════════════════════════════════════════════════════
+   BARCODE GENERATOR
+══════════════════════════════════════════════════════ */
+function copyText(text, el) {
+  navigator.clipboard.writeText(text);
+  const msg = el.querySelector('.copy-msg');
+  msg.style.display = 'inline';
+  setTimeout(() => msg.style.display = 'none', 1200);
+}
+function padLeft(str, length) { return str.toString().padStart(length, '0'); }
+function calculateCheckDigit(input) {
+  let sum = 0;
+  for (let i = 0; i < input.length; i++) {
+    const d = parseInt(input[input.length - 1 - i], 10);
+    sum += d * ((i % 2 === 0) ? 3 : 1);
+  }
+  return (10 - (sum % 10)) % 10;
+}
+function formatPrice(pence) {
+  const p = parseInt(pence, 10);
+  if (isNaN(p) || p <= 0) return '';
+  if (p < 100) return p + 'p';
+  const pounds = Math.floor(p / 100), rem = p % 100;
+  return rem === 0 ? `£${pounds}.00` : `£${pounds}.${String(rem).padStart(2,'0')}`;
+}
+function generateBarcode() {
+  const productInput = document.getElementById('productCode').value;
+  const priceInput   = document.getElementById('price').value;
+  const labelInput   = document.getElementById('barcodeLabelInput').value;
+  if (!productInput || productInput.length < 8) { alert('Enter a valid barcode (at least 8 digits).'); return; }
+  document.getElementById('barcodeLabel').innerText = labelInput;
+  document.getElementById('barcodePrice').innerText = formatPrice(priceInput);
+  const numericProduct = productInput.replace(/\D/g, '');
+  let productDigits = numericProduct.length === 14 ? numericProduct.slice(0,-1) : numericProduct;
+  productDigits = padLeft(productDigits, 13);
+  const paddedPrice = padLeft(priceInput, 6);
+  const baseNumber  = `91${productDigits}${paddedPrice}`;
+  const checkDigit  = calculateCheckDigit(baseNumber);
+  JsBarcode('#barcodeCanvas', `${baseNumber}${checkDigit}`, { format:'CODE128', displayValue:true, fontSize:8, width:2, height:80, margin:5 });
+}
+function setPriceAndGenerate(pence) {
+  document.getElementById('price').value = pence;
+  document.getElementById('customPriceContainer').style.display = 'none';
+  generateBarcode();
+}
+function showCustomPrice() { document.getElementById('customPriceContainer').style.display = 'block'; }
+</script>
+</body>
+</html>
