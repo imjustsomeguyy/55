@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jay's Method Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<style>
+  /* ── Nav alignment fix ── */
+  .site-nav {
+    display: flex;
+    align-items: center;   /* vertically centre every child */
+    gap: 4px;
+  }
+
+  /* Ensure all nav items share the same line-height / padding baseline */
+  .site-nav a,
+  .site-nav button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;        /* collapse any inherited line-height differences */
+  }
+</style>
+</head>
+<body>
+<header class="site-head">
+  <div class="head-inner">
+    <div class="brand">Sneaky Jay's Method Hub<span class="mark">55</span></div>
+    <nav class="site-nav">
+      <a href="index.html" class="active">Home</a>
+      <button id="guidesBtn" type="button">Guides</button>
+      <a href="apps.html">Apps</a>
+      <button id="themeBtn" type="button" class="theme-btn">
+        <!-- gear icon via inline SVG so no extra font request is needed -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+                   a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+                   A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+                   l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+                   A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+                   l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+                   a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+                   l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+                   a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+        Theme
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <p class="eyebrow">EasyP55</p>
+    <h1 class="page-title">Start here.</h1>
+    <p class="lede">methods, guides and gens</p>
+    <div class="hero-grid">
+      <button class="hero-card" id="guidesCard" type="button">
+        <span class="glyph">Methods</span>
+        <h3>Guides</h3>
+        <p>Most methods are here.</p>
+      </button>
+      <a class="hero-card" href="apps.html">
+        <span class="glyph">Links</span>
+        <h3>Apps &amp; Tools</h3>
+        <p>Generators and stuff</p>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">EasyP55</footer>
+
+<!-- Guides popup -->
+<div class="modal-overlay" id="guidesModal">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Guides">
+    <div class="modal-header">
+      <span>Guides</span>
+      <button class="modal-close" id="guidesClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-list">
+      <a href="method-1.html"><span class="num">1</span> Method 1</a>
+      <a href="method-2.html"><span class="num">2</span> Method 2</a>
+      <a href="method-3.html"><span class="num">3</span> Method 3</a>
+    </div>
+  </div>
+</div>
+
+<script src="guides-modal.js"></script>
+<script>
+  // Hero card also opens the modal
+  document.getElementById('guidesCard').addEventListener('click', () => {
+    document.getElementById('guidesBtn').click();
+  });
+</script>
+</body>
+</html>
