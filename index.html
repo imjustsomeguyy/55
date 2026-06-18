@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jay's Method Hub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-head">
+  <div class="head-inner">
+    <div class="brand">Sneaky Jay's Hub <span class="mark">55</span></div>
+    <nav class="site-nav">
+      <a href="index.html" class="active">Home</a>
+      <button id="guidesBtn" type="button">Guides</button>
+      <a href="apps.html">Apps</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <span class="eyebrow">EasyP55</span>
+    <h1 class="page-title">Start here.</h1>
+    <p class="lede">Methods, guides, and generators — all in one place.</p>
+    <div class="hero-grid">
+      <button class="hero-card" id="guidesCard" type="button">
+        <span class="glyph">Methods</span>
+        <h3>Guides</h3>
+        <p>Step-by-step methods, all here.</p>
+      </button>
+      <a class="hero-card" href="apps.html">
+        <span class="glyph">Links</span>
+        <h3>Apps &amp; Tools</h3>
+        <p>Generators and useful stuff.</p>
+      </a>
+    </div>
+  </div>
+</main>
+
+<footer class="site-foot">EasyP55</footer>
+
+<!-- Guides modal -->
+<div class="modal-overlay" id="guidesModal">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="Guides">
+    <div class="modal-header">
+      <span>Guides</span>
+      <button class="modal-close" id="guidesClose" aria-label="Close">&times;</button>
+    </div>
+    <div class="modal-list">
+      <a href="method-1.html"><span class="num">1</span> Method 1</a>
+      <a href="method-2.html"><span class="num">2</span> Method 2</a>
+      <a href="method-3.html"><span class="num">3</span> Method 3</a>
+    </div>
+  </div>
+</div>
+
+<script src="guides-modal.js"></script>
+<script>
+  document.getElementById('guidesCard').addEventListener('click', () => {
+    document.getElementById('guidesBtn').click();
+  });
+</script>
+</body>
+</html>
