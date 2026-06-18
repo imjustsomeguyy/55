@@ -929,13 +929,21 @@ main {
 ═══════════════════════════════════════════════ */
 @media (max-width: 620px) {
   .hero-grid { grid-template-columns: 1fr; }
-  .head-inner { padding: 0 16px; gap: 8px; }
+  .head-inner { padding: 0 14px; gap: 6px; }
   main { padding: 40px 16px 60px; }
-  .brand { font-size: 0.88rem; }
+  .brand { font-size: 0.8rem; gap: 6px; }
+  .mark { font-size: 0.6rem; padding: 2px 5px; }
   .app-bar-url { display: none; }
   .theme-panel { width: calc(100vw - 32px); }
   .theme-panel-overlay { padding: 70px 16px 0; justify-content: center; }
+  .site-nav { gap: 1px; }
   .site-nav a:not(.active):not([href="apps.html"]):not([href="index.html"]) { display: none; }
+  .site-nav a, .site-nav button { padding: 6px 9px; font-size: 0.8rem; }
+
+  /* Theme button: icon only on mobile — hide the text label */
+  .theme-toggle-btn .theme-btn-label { display: none; }
+  .theme-toggle-btn { padding: 6px 8px !important; gap: 0; }
+  .theme-toggle-btn svg { width: 15px; height: 15px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
