@@ -1008,7 +1008,19 @@ ol li::marker {
   text-shadow: 0 0 36px var(--glow2);
 }
 [data-theme="stars"] .mark {
+  position: relative;
   box-shadow: 0 0 10px var(--glow), 0 0 22px var(--glow2);
+}
+[data-theme="stars"] .mark::after {
+  content: '✦';
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  font-size: 8px;
+  line-height: 1;
+  color: #fff;
+  pointer-events: none;
+  animation: twinkle 2.6s ease-in-out infinite;
 }
 [data-theme="stars"] .card:hover,
 [data-theme="stars"] .hero-card:hover {
