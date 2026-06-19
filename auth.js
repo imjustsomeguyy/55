@@ -12,7 +12,7 @@
 
 (function () {
   // ---- CONFIG ----------------------------------------------------
-  var SITE_PASSWORD = "changeme"; // <-- set your shared password here
+  var SITE_PASSWORD = "gcat"; // <-- set your shared password here
   var SESSION_KEY = "jmh_unlocked";
   var SESSION_HOURS = 12; // how long an unlock lasts before re-asking
   // ------------------------------------------------------------------
