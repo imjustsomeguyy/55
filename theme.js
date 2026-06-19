@@ -35,6 +35,17 @@
   let animFrame = null;
   let particles = [];
 
+  /* gentle mouse parallax for the Stars theme (eased, not 1:1) */
+  let mouseTX = 0, mouseTY = 0; /* target, normalized -1..1 */
+  let mouseX  = 0, mouseY  = 0; /* smoothed */
+
+  function trackMouse() {
+    window.addEventListener('mousemove', e => {
+      mouseTX = (e.clientX / window.innerWidth  - 0.5) * 2;
+      mouseTY = (e.clientY / window.innerHeight - 0.5) * 2;
+    }, { passive: true });
+  }
+
   /* ── APPLY THEME ─────────────────────────────────────────────── */
   function applyTheme(id) {
     const theme = THEMES.find(t => t.id === id) || THEMES[0];
@@ -86,19 +97,21 @@
     const H = window.innerHeight;
 
     if (themeId === 'stars') {
-      /* ~260 stars of varied size, speed, twinkle phase */
+      /* ~260 stars across 3 depth tiers — far/dim/slow, mid, near/bright/parallaxed */
       for (let i = 0; i < 260; i++) {
         const r = Math.random();
+        const tier = r < 0.6 ? 0 : r < 0.88 ? 1 : 2;
         particles.push({
           x: Math.random() * W,
           y: Math.random() * H,
-          r: r < 0.6 ? 0.6 : r < 0.88 ? 1.1 : 1.8, /* small/mid/large */
+          r: tier === 0 ? 0.6 : tier === 1 ? 1.1 : 1.8,
+          depth: tier === 0 ? 0.3 : tier === 1 ? 0.6 : 1.0,
           speed: 0.02 + Math.random() * 0.04,
           phase: Math.random() * Math.PI * 2,
           freq:  0.4 + Math.random() * 1.2,
-          color: r < 0.7
+          color: tier === 0
             ? `rgba(167,139,250,${0.5 + Math.random()*0.5})`
-            : r < 0.9
+            : tier === 1
             ? `rgba(129,140,248,${0.4 + Math.random()*0.6})`
             : `rgba(255,255,255,${0.6 + Math.random()*0.4})`,
           drift: (Math.random() - 0.5) * 0.05,
@@ -194,15 +207,24 @@
   }
 
   function newShooter(W, H) {
+    /* mostly cool white/violet, occasionally a warm gold one */
+    const palette = [
+      { core: '255,255,255', tail: '167,139,250' },
+      { core: '224,214,255', tail: '129,140,248' },
+      { core: '255,236,200', tail: '251,191,140' },
+    ];
+    const color = Math.random() < 0.15 ? palette[2] : palette[Math.floor(Math.random() * 2)];
+    const dir = Math.random() < 0.5 ? 1 : -1; /* left-to-right or right-to-left */
     return {
-      x: Math.random() * W * 0.7,
+      x: dir === 1 ? Math.random() * W * 0.6 : W * 0.4 + Math.random() * W * 0.6,
       y: Math.random() * H * 0.4,
       len: 80 + Math.random() * 120,
-      vx: 4 + Math.random() * 5,
+      vx: dir * (4 + Math.random() * 5),
       vy: 2 + Math.random() * 3,
       alpha: 0,
       alive: true,
       delay: 60 + Math.random() * 300, /* frames before appearing */
+      color,
     };
   }
 
@@ -212,6 +234,8 @@
     animFrame = requestAnimationFrame(tick);
     if (!ctx) return;
     frame++;
+    mouseX += (mouseTX - mouseX) * 0.06;
+    mouseY += (mouseTY - mouseY) * 0.06;
     const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
 
@@ -232,12 +256,26 @@
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
-    /* Slow-drifting nebula clouds, sit behind the stars */
+    /* Faint Milky Way band sweeping across the sky */
+    ctx.save();
+    ctx.translate(W * 0.5, H * 0.42);
+    ctx.rotate(-0.42);
+    const mw = ctx.createLinearGradient(0, -H * 0.6, 0, H * 0.6);
+    mw.addColorStop(0,    'transparent');
+    mw.addColorStop(0.46, 'rgba(196,181,253,0.05)');
+    mw.addColorStop(0.5,  'rgba(224,214,255,0.07)');
+    mw.addColorStop(0.54, 'rgba(196,181,253,0.05)');
+    mw.addColorStop(1,    'transparent');
+    ctx.fillStyle = mw;
+    ctx.fillRect(-W, -H, W * 2, H * 2);
+    ctx.restore();
+
+    /* Slow-drifting nebula clouds, sit behind the stars — slight parallax */
     if (particles.nebulae) {
       particles.nebulae.forEach(n => {
         n.phase += n.speed;
-        const nx = n.x + Math.sin(n.phase) * n.driftX;
-        const ny = n.y + Math.cos(n.phase * 0.8) * n.driftY;
+        const nx = n.x + Math.sin(n.phase) * n.driftX + mouseX * 10;
+        const ny = n.y + Math.cos(n.phase * 0.8) * n.driftY + mouseY * 8;
         const ng = ctx.createRadialGradient(nx, ny, 0, nx, ny, n.r);
         ng.addColorStop(0, `hsla(${n.hue},80%,65%,${n.alpha})`);
         ng.addColorStop(1, 'transparent');
@@ -246,12 +284,16 @@
       });
     }
 
-    /* Stars */
+    /* Stars — depth-tiered parallax: far stars barely move, near ones drift more */
     particles.forEach(p => {
       if (!p.freq) return;
       p.x += p.drift;
       if (p.x > W) p.x = 0;
       if (p.x < 0) p.x = W;
+
+      const depth = p.depth || 0.5;
+      const px = p.x + mouseX * 16 * depth;
+      const py = p.y + mouseY * 12 * depth;
 
       const blink = 0.5 + 0.5 * Math.sin(t * p.freq + p.phase);
       ctx.globalAlpha = blink * 0.85 + 0.15;
@@ -259,13 +301,13 @@
       ctx.shadowColor = p.color;
       ctx.fillStyle   = p.color;
       ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.arc(px, py, p.r, 0, Math.PI * 2);
       ctx.fill();
     });
     ctx.shadowBlur = 0;
     ctx.globalAlpha = 1;
 
-    /* Shooting stars */
+    /* Shooting stars — trail follows the true travel vector, color varies */
     if (particles.shooters) {
       particles.shooters.forEach((s, idx) => {
         if (s.delay > 0) { s.delay--; return; }
@@ -275,20 +317,26 @@
         s.x += s.vx;
         s.y += s.vy;
 
-        const sgrad = ctx.createLinearGradient(s.x - s.vx*8, s.y - s.vy*8, s.x, s.y);
-        sgrad.addColorStop(0, 'rgba(167,139,250,0)');
-        sgrad.addColorStop(1, `rgba(255,255,255,${s.alpha * 0.9})`);
+        const mag  = Math.hypot(s.vx, s.vy) || 1;
+        const ux   = s.vx / mag, uy = s.vy / mag;
+        const tailX = s.x - ux * s.len;
+        const tailY = s.y - uy * s.len;
+
+        const sgrad = ctx.createLinearGradient(tailX, tailY, s.x, s.y);
+        sgrad.addColorStop(0, `rgba(${s.color.tail},0)`);
+        sgrad.addColorStop(1, `rgba(${s.color.core},${s.alpha * 0.9})`);
         ctx.strokeStyle = sgrad;
         ctx.lineWidth   = 1.5;
         ctx.shadowBlur  = 12;
-        ctx.shadowColor = 'rgba(167,139,250,0.8)';
+        ctx.shadowColor = `rgba(${s.color.tail},0.8)`;
         ctx.beginPath();
-        ctx.moveTo(s.x - s.vx * (s.len/s.vx), s.y - s.vy * (s.len/s.vx));
+        ctx.moveTo(tailX, tailY);
         ctx.lineTo(s.x, s.y);
         ctx.stroke();
         ctx.shadowBlur = 0;
 
-        if (s.x > W + 50 || s.y > H + 50) {
+        const outX = s.vx > 0 ? s.x > W + 50 : s.x < -50;
+        if (outX || s.y > H + 50) {
           particles.shooters[idx] = newShooter(W, H);
         }
       });
@@ -580,6 +628,7 @@
   function init() {
     buildPanel();
     wireToggle();
+    trackMouse();
     applyTheme(current);
   }
 
