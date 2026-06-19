@@ -9,6 +9,23 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<style>
+  /* ── Nav alignment fix ── */
+  .site-nav {
+    display: flex;
+    align-items: center;   /* vertically centre every child */
+    gap: 4px;
+  }
+
+  /* Ensure all nav items share the same line-height / padding baseline */
+  .site-nav a,
+  .site-nav button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    line-height: 1;        /* collapse any inherited line-height differences */
+  }
+</style>
 </head>
 <body>
 <canvas id="stars-canvas" aria-hidden="true"></canvas>
